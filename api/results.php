@@ -17,7 +17,8 @@ $hotstarauth = "$hotstarauth"."~hmac=" . hash_hmac("sha256", $hotstarauth, $AKAM
 $auth = "hdntl=exp=$exp~acl=/*";
 $auth1 = "$auth"."~data=hdntl~hmac=" . hash_hmac("sha256", $hotstarauth, $AKAMAI_ENCRYPTION_KEY);
 
-$id = $_GET['id'];
+// $id = $_GET['id'];
+$id ="1260142021";
 
 $url= "https://api.hotstar.com/play/v2/playback/content/$id?device-id=$userDeviceID&desired-config=|&os-name=Android&os-version=8";
 
