@@ -1,8 +1,8 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 
-$userTokenFile = "config/user_token";
-$userDeviceIDFile = "config/user_device_id";
+$userTokenFile = "/var/task/user/api/config/user_token";
+$userDeviceIDFile = "/var/task/user/api/config/user_device_id";
 
 
 $userToken = file_get_contents($userTokenFile);
