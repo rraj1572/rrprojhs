@@ -1,73 +1,62 @@
 <?php
-// disable error
-error_reporting(0);
-$error = 2;
+header('Content-Type: application/json; charset=utf-8');
 
-// Encode Key ID
-$hex = $_GET["keyid"];            // and much more hex values as string as in your example
-$bin = hex2bin($hex);       // convert the hex values to binary data stored as a PHP string
-$keyid64 = base64_encode($bin); // remove == , replace as space
-$finalkeyid64 = str_replace('=', '', $keyid64);
+$userTokenFile = "config/user_token";
+$userDeviceIDFile = "config/user_device_id";
 
 
-// validation
-if (empty($finalkeyid64)){
+$userToken = file_get_contents($userTokenFile);
+$userDeviceID = file_get_contents($userDeviceIDFile);
+$AKAMAI_ENCRYPTION_KEY = "\x05\xfc\x1a\x01\xca\xc9\x4b\xc4\x12\xfc\x53\x12\x07\x75\xf9\xee";
+$st = time();
+$exp = $st + 6000;
+$hotstarauth = "st=$st~exp=$exp~acl=/*";
+$hotstarauth = "$hotstarauth"."~hmac=" . hash_hmac("sha256", $hotstarauth, $AKAMAI_ENCRYPTION_KEY);
+$auth = "hdntl=exp=$exp~acl=/*";
+$auth1 = "$auth"."~data=hdntl~hmac=" . hash_hmac("sha256", $hotstarauth, $AKAMAI_ENCRYPTION_KEY);
 
-    // return 503 & JSON
-   http_response_code(503);
-header("Content-Type: application/json");
-$errorjson = array("Status"=>"503","Content"=>"Validation Failed!","Reason"=>"Did not provide Key ID | Key or Key ID | Key isn't complete.");
-echo json_encode($errorjson);
-$error = 1;
-   
-   exit;
-}
+$id = $_GET['id'];
 
-// Encode Key
-$hex2 = $_GET["key"];            // and much more hex values as string as in your example
-$bin2 = hex2bin($hex2);       // convert the hex values to binary data stored as a PHP string
-$key64 = base64_encode($bin2); // remove == , replace as space
-$finalkey64 = str_replace('=', '', $key64);
+$url= "https://api.hotstar.com/play/v2/playback/content/$id?device-id=$userDeviceID&desired-config=|&os-name=Android&os-version=8";
 
-// validation
+$headers = array(
+    'hotstarauth: '.$hotstarauth,
+    'X-Country-Code: in',
+    'X-HS-AppVersion: 3.3.0',
+    'X-HS-Platform: firetv',
+    'X-HS-Client: platform:android;app_id:in.startv.hotstar;app_version:23.02.20.38;os:Android;os_version:8.1.0;schema_version:0.0.771;brand:vivo;model:vivo 1724;carrier:;network_data:UNKNOWN',
+    'X-HS-UserToken: '.$userToken,
+    'Cookie: '.$auth1,
+);
 
-if (empty($finalkey64)){
-  if ($error !== 1){
-     // return 503 & JSON
-   http_response_code(503);
-   header("Content-Type: application/json");
-   $errorjson = array("Status"=>"503","Content"=>"Validation Failed!","Reason"=>"Did not provide Key ID | Key or Key ID | Key isn't complete.");
-   echo json_encode($errorjson);
-   
-      
-      exit;
-  }
-}
+$curl = curl_init();
+  curl_setopt_array($curl, array(
+  CURLOPT_URL => $url,
+  CURLOPT_RETURNTRANSFER => true,
+  CURLOPT_CUSTOMREQUEST => 'GET',
+  CURLOPT_HTTPHEADER => $headers,
+));
 
-/*
-// create JSON for keys 
-$keys[] = array("kty"=>"oct","k"=>$finalkey64,"kid"=>$finalkeyid64);
+$response = curl_exec($curl);
+curl_close($curl);
 
-// encode JSON
-$license = array("keys"=>$keys,"type"=>"temporary");
+$zx = json_decode($response, true);
 
-// output JSON
-header("Content-Type: application/json");
-echo json_encode($license);
-*/
+$xurl = $zx['data']['playBackSets'][0]['playbackUrl'];
+$blink = @get_headers($xurl, 1); 
+$alink = $blink['Set-Cookie'];
+
+echo $alink;
+
+echo "" . PHP_EOL;
+echo "" . PHP_EOL;
+
+echo $xurl;
+
+echo "" . PHP_EOL;
+echo "" . PHP_EOL;
+
+echo $response;
+
+
 ?>
-
-
-{  
-    "keys":[  
-       {  
-          "kty":"oct",
-          "k":"<?php echo $finalkey64;?>",
-          "kid":"<?php echo $finalkeyid64;?>"
-       }
-    ],
-    "type":"temporary"
- }
- 
-
-
